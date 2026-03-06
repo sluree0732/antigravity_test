@@ -288,10 +288,7 @@ export default function NaverPage() {
     try {
       const pngBase64 = generateChartPng(results)
       const imageId = workbook.addImage({ base64: pngBase64, extension: 'png' })
-      chartSheet.addImage(imageId, {
-        tl: { col: 0, row: 1, nativeCol: 0, nativeColOff: 0, nativeRow: 1, nativeRowOff: 0 },
-        br: { col: 14, row: 28, nativeCol: 14, nativeColOff: 0, nativeRow: 28, nativeRowOff: 0 },
-      })
+      chartSheet.addImage(imageId, 'A2:N28')
     } catch { /* 차트 생성 실패 시 데이터만 */ }
 
     const buffer = await workbook.xlsx.writeBuffer()
