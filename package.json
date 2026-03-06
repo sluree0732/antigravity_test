@@ -2,13 +2,10 @@
   "name": "naver_api",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "NODE_OPTIONS=--openssl-legacy-provider next start -p ${PORT:-3000}"
+    "start": "next start -p ${PORT:-3000}"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
