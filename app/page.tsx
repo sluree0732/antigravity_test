@@ -1,65 +1,63 @@
-import Image from "next/image";
+import Link from 'next/link'
 
-export default function Home() {
+async function getRecentPosts() {
+  try {
+    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts?page=1&limit=5`, {
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.posts ?? []
+  } catch {
+    return []
+  }
+}
+
+export default async function HomePage() {
+  const posts = await getRecentPosts()
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-10">
+      <section className="text-center py-14 px-4 rounded-2xl bg-gradient-to-br from-violet-100 via-purple-50 to-pink-50">
+        <h1 className="text-3xl font-bold text-violet-800 mb-3">커뮤니티에 오신 것을 환영합니다</h1>
+        <p className="text-slate-500 mb-7">자유롭게 글을 작성하고 소통하세요.</p>
+        <Link
+          href="/board"
+          className="inline-block bg-violet-500 text-white px-6 py-2.5 rounded-full hover:bg-violet-600 transition-colors text-sm font-medium shadow-sm"
+        >
+          게시판 바로가기
+        </Link>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-violet-800">최근 게시글</h2>
+          <Link href="/board" className="text-sm text-violet-400 hover:text-violet-600 transition-colors">
+            전체 보기 →
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {posts.length === 0 ? (
+          <p className="text-slate-400 text-sm text-center py-8">아직 게시글이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {posts.map((post: { id: string; title: string; authorName: string; createdAt: string }) => (
+              <li key={post.id}>
+                <Link
+                  href={`/board/${post.id}`}
+                  className="flex items-center justify-between bg-white border border-violet-100 rounded-xl px-4 py-3 hover:border-violet-300 hover:shadow-sm transition-all"
+                >
+                  <span className="text-sm text-slate-700 truncate">{post.title}</span>
+                  <div className="flex items-center gap-3 text-xs text-slate-400 ml-4 shrink-0">
+                    <span>{post.authorName}</span>
+                    <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
-  );
+  )
 }
