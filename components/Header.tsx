@@ -25,6 +25,12 @@ export default function Header() {
           <Link href="/naver" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
             네이버API
           </Link>
+          <Link href="/youtube" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+            유튜브API
+          </Link>
+          <Link href="/instagram" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+            인스타그램API
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">

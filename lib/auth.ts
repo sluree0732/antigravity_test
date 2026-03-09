@@ -36,24 +36,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     },
   },
-  jwt: {
-    encode: async ({ secret, token }) => {
-      const { SignJWT } = await import('jose')
-      const secretKey = new TextEncoder().encode(String(secret))
-      return new SignJWT(token as Record<string, unknown>)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('30d')
-        .sign(secretKey)
-    },
-    decode: async ({ secret, token }) => {
-      if (!token) return null
-      const { jwtVerify } = await import('jose')
-      const secretKey = new TextEncoder().encode(String(secret))
-      const { payload } = await jwtVerify(token, secretKey, { algorithms: ['HS256'] })
-      return payload
-    },
-  },
   pages: {
     signIn: '/login',
   },
