@@ -40,7 +40,12 @@ export async function getPosts(
   limit = 10,
   search = ''
 ): Promise<PostListResult> {
-  const rows = await getSheetValues(RANGE)
+  let rows: string[][] = []
+  try {
+    rows = await getSheetValues(RANGE)
+  } catch {
+    return { posts: [], total: 0, page, limit }
+  }
   let posts = rows.map(rowToPost).filter((p) => p.id)
 
   if (search) {
