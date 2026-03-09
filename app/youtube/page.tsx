@@ -37,7 +37,7 @@ interface CollectionRecord {
   mode: 'keyword' | 'channel'
   queries: string[]
   maxResults: number
-  filters: Record<string, number>
+  filters: Record<string, number | undefined>
   collectedAt: string
   queryResults: QueryResult[]
   usage?: { units: number; calls: number }
