@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn, signOut, useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -58,12 +58,20 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => signIn('naver')}
-              className="text-sm bg-violet-500 text-white px-3 py-1.5 rounded-full hover:bg-violet-600 transition-colors shadow-sm"
-            >
-              로그인
-            </button>
+            <>
+              <Link
+                href="/signup"
+                className="text-sm text-slate-500 hover:text-violet-600 transition-colors"
+              >
+                회원가입
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm bg-violet-500 text-white px-3 py-1.5 rounded-full hover:bg-violet-600 transition-colors shadow-sm"
+              >
+                로그인
+              </Link>
+            </>
           )}
         </div>
       </div>
