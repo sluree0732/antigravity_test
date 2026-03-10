@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   const { keywords, startDate, endDate, timeUnit, device, gender, ages } = await req.json()
 
-  const clientId = process.env.NAVER_CLIENT_ID
-  const clientSecret = process.env.NAVER_CLIENT_SECRET
+  const clientId = process.env.NAVER_DATALAB_CLIENT_ID
+  const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
     return NextResponse.json({ error: 'Naver API 인증 정보가 없습니다.' }, { status: 500 })

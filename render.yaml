@@ -28,6 +28,10 @@ services:
         sync: false
       - key: NAVER_CLIENT_SECRET
         sync: false
+      - key: NAVER_DATALAB_CLIENT_ID
+        sync: false
+      - key: NAVER_DATALAB_CLIENT_SECRET
+        sync: false
       - key: NAVER_SEARCHAD_API_KEY
         sync: false
       - key: NAVER_SEARCHAD_SECRET_KEY
