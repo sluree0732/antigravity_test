@@ -1,5 +1,4 @@
 import NextAuth from 'next-auth'
-import type { OAuthConfig, OAuthUserConfig } from 'next-auth/providers'
 import { upsertUser } from './users'
 
 interface NaverProfile {
@@ -14,34 +13,28 @@ interface NaverProfile {
   }
 }
 
-function NaverProvider(options: OAuthUserConfig<NaverProfile>): OAuthConfig<NaverProfile> {
-  return {
-    id: 'naver',
-    name: '네이버',
-    type: 'oauth',
-    authorization: 'https://nid.naver.com/oauth2.0/authorize',
-    token: 'https://nid.naver.com/oauth2.0/token',
-    userinfo: 'https://openapi.naver.com/v1/nid/me',
-    profile(profile) {
-      return {
-        id: profile.response.id,
-        name: profile.response.name ?? profile.response.nickname ?? '',
-        email: profile.response.email ?? '',
-        image: profile.response.profile_image ?? null,
-      }
-    },
-    ...options,
-  }
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [
-    NaverProvider({
+    {
+      id: 'naver',
+      name: '네이버',
+      type: 'oauth',
       clientId: process.env.NAVER_CLIENT_ID!,
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
-    }),
+      authorization: 'https://nid.naver.com/oauth2.0/authorize',
+      token: 'https://nid.naver.com/oauth2.0/token',
+      userinfo: 'https://openapi.naver.com/v1/nid/me',
+      profile(profile: NaverProfile) {
+        return {
+          id: profile.response.id,
+          name: profile.response.name ?? profile.response.nickname ?? '',
+          email: profile.response.email ?? '',
+          image: profile.response.profile_image ?? null,
+        }
+      },
+    },
   ],
   callbacks: {
     async signIn({ user }) {
