@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BASE = 'https://graph.facebook.com/v23.0'
+const BASE_HOST = 'https://graph.facebook.com'
+const API_VERSION = 'v23.0'
+const BASE = `${BASE_HOST}/${API_VERSION}`
+
+const HASHTAG_FIELDS = 'id,caption,media_type,media_url,permalink,comments_count,like_count'
 
 function getEnv() {
   const userId = process.env.IG_USER_ID
@@ -9,15 +13,23 @@ function getEnv() {
   return { userId, token }
 }
 
-function parseUsageHeader(res: Response): { call_count: number; total_time: number } | null {
+function parseUsageHeader(headers: Headers): { call_count: number; total_time: number } | null {
   try {
-    const raw = res.headers.get('x-app-usage')
+    const raw = headers.get('x-app-usage') ?? headers.get('X-App-Usage')
     if (!raw) return null
     const u = JSON.parse(raw) as { call_count?: number; total_time?: number }
     return { call_count: u.call_count ?? 0, total_time: u.total_time ?? 0 }
   } catch {
     return null
   }
+}
+
+// Python의 advance_paging과 동일: next URL에서 path와 params 분리
+function advancePaging(nextUrl: string): { path: string; params: Record<string, string> } {
+  const parsed = new URL(nextUrl)
+  const params: Record<string, string> = {}
+  parsed.searchParams.forEach((v, k) => { params[k] = v })
+  return { path: `${parsed.origin}${parsed.pathname}`, params }
 }
 
 async function getHashtagId(
@@ -31,11 +43,18 @@ async function getHashtagId(
   url.searchParams.set('access_token', token)
 
   const res = await fetch(url.toString(), { cache: 'no-store' })
-  const usage = parseUsageHeader(res)
-  if (!res.ok) throw new Error(`해시태그 ID 조회 실패 (${res.status})`)
+  const usage = parseUsageHeader(res.headers)
 
-  const data = await res.json() as { data?: { id: string }[]; error?: { message: string } }
-  if (data.error) throw new Error(data.error.message)
+  const data = await res.json() as {
+    data?: { id: string }[]
+    error?: { message: string; code?: number; type?: string }
+  }
+
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message ?? `HTTP ${res.status}`
+    throw new Error(`해시태그 ID 조회 실패 (${res.status}): ${errMsg}`)
+  }
+
   const items = data.data ?? []
   if (!items.length) throw new Error(`'#${keyword}' 해시태그를 찾을 수 없습니다.`)
   return { id: items[0].id, usage }
@@ -47,40 +66,58 @@ async function fetchMedia(
   userId: string,
   token: string,
   maxResults: number,
-): Promise<{ results: Record<string, string>[]; usage: { call_count: number; total_time: number } | null }> {
+): Promise<{ results: Record<string, string>[]; usage: { call_count: number; total_time: number } | null; logs: string[] }> {
   const results: Record<string, string>[] = []
   const seen = new Set<string>()
+  const logs: string[] = []
   let lastUsage: { call_count: number; total_time: number } | null = null
 
   let url = `${BASE}/${hashtagId}/${kind}`
   let params: Record<string, string> = {
     user_id: userId,
-    fields: 'id,caption,media_type,media_url,permalink,comments_count,like_count',
+    fields: HASHTAG_FIELDS,
     access_token: token,
     limit: '50',
   }
 
   const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+  let page = 0
 
   while (results.length < maxResults) {
+    page++
+    logs.push(`[수집] ${kind} page ${page} ...`)
+
     const reqUrl = new URL(url)
     Object.entries(params).forEach(([k, v]) => reqUrl.searchParams.set(k, v))
 
     const res = await fetch(reqUrl.toString(), { cache: 'no-store' })
-    const u = parseUsageHeader(res)
+    const u = parseUsageHeader(res.headers)
     if (u) lastUsage = u
 
     const data = await res.json() as {
       data?: Record<string, unknown>[]
-      paging?: { next?: string }
-      error?: { message: string; code?: number }
+      paging?: { next?: string; cursors?: { after?: string; before?: string } }
+      error?: { message: string; code?: number; type?: string }
+    }
+
+    // 버스트/요청제한 처리 (Python의 403/429 처리)
+    if (res.status === 429 || res.status === 403) {
+      const errMsg = data.error?.message ?? `HTTP ${res.status}`
+      const code = data.error?.code
+      logs.push(`[중단] ${kind} HTTP ${res.status} code=${code}: ${errMsg}`)
+      break
     }
 
     if (!res.ok || data.error) {
-      throw new Error(data.error?.message ?? `미디어 조회 실패 (${res.status})`)
+      const errMsg = data.error?.message ?? `HTTP ${res.status}`
+      const code = data.error?.code
+      throw new Error(`미디어 조회 실패 [${kind}] (${res.status}) code=${code}: ${errMsg}`)
     }
 
-    for (const item of data.data ?? []) {
+    const rows = data.data ?? []
+    logs.push(`[수집] ${kind} page ${page} → ${rows.length}개 응답`)
+
+    for (const item of rows) {
       const permalink = String(item.permalink ?? '')
       if (!permalink || seen.has(permalink)) continue
       seen.add(permalink)
@@ -97,18 +134,22 @@ async function fetchMedia(
       if (results.length >= maxResults) break
     }
 
-    // top_media는 페이지네이션 없음
+    // top_media는 페이지네이션 없음 (Python과 동일)
     if (kind === 'top_media') break
 
     const nextUrl = data.paging?.next
-    if (!nextUrl) break
+    if (!nextUrl) {
+      logs.push(`[종료] ${kind} 다음 페이지 없음`)
+      break
+    }
 
-    const parsed = new URL(nextUrl)
-    url = `${parsed.origin}${parsed.pathname}`
-    params = Object.fromEntries(parsed.searchParams.entries())
+    // Python의 advance_paging과 동일하게 next URL 파싱
+    const { path, params: nextParams } = advancePaging(nextUrl)
+    url = path
+    params = { ...nextParams, limit: '50' }
   }
 
-  return { results, usage: lastUsage }
+  return { results, usage: lastUsage, logs }
 }
 
 export async function POST(req: NextRequest) {
@@ -126,8 +167,8 @@ export async function POST(req: NextRequest) {
     const { id: hashtagId, usage: searchUsage } = await getHashtagId(keyword, userId, token)
 
     const half = Math.ceil(maxResults / 2)
-    const { results: recentMedia, usage: recentUsage } = await fetchMedia(hashtagId, 'recent_media', userId, token, half)
-    const { results: topMedia, usage: topUsage } = await fetchMedia(hashtagId, 'top_media', userId, token, half)
+    const { results: recentMedia, usage: recentUsage, logs: recentLogs } = await fetchMedia(hashtagId, 'recent_media', userId, token, half)
+    const { results: topMedia, usage: topUsage, logs: topLogs } = await fetchMedia(hashtagId, 'top_media', userId, token, half)
 
     // 중복 제거 후 합산
     const seen = new Set<string>()
@@ -141,7 +182,12 @@ export async function POST(req: NextRequest) {
     }
 
     const finalUsage = topUsage ?? recentUsage ?? searchUsage
-    return NextResponse.json({ query: keyword, results, usage: finalUsage })
+    return NextResponse.json({
+      query: keyword,
+      results,
+      usage: finalUsage,
+      logs: [...recentLogs, ...topLogs],
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : '서버 오류'
     return NextResponse.json({ error: message }, { status: 500 })

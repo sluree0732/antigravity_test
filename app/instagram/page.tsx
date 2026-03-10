@@ -253,9 +253,10 @@ export default function InstagramPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: q, maxResults }),
           })
-          const data = await res.json() as { query?: string; results?: HashtagResult[]; usage?: { call_count: number; total_time: number }; error?: string }
+          const data = await res.json() as { query?: string; results?: HashtagResult[]; usage?: { call_count: number; total_time: number }; error?: string; logs?: string[] }
           if (!res.ok) throw new Error(data.error ?? '수집 실패')
 
+          if (data.logs) data.logs.forEach((l) => addLog(l))
           const results = data.results ?? []
           hashtagResults.push({ query: data.query ?? q, results })
           if (data.usage) lastUsage = data.usage
