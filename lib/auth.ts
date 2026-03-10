@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
-import { upsertUser } from './users'
+import Credentials from 'next-auth/providers/credentials'
+import { upsertUser, verifyLocalUser } from './users'
 
 interface NaverProfile {
   resultcode: string
@@ -38,9 +39,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     },
+    Credentials({
+      name: '아이디/비밀번호',
+      credentials: {
+        userId: { label: '아이디', type: 'text' },
+        password: { label: '비밀번호', type: 'password' },
+      },
+      async authorize(credentials) {
+        const userId = credentials?.userId as string
+        const password = credentials?.password as string
+        if (!userId || !password) return null
+
+        const user = await verifyLocalUser(userId, password)
+        if (!user) return null
+
+        return {
+          id: user.userId,
+          name: user.name,
+          email: `${user.userId}@local`,
+          image: null,
+        }
+      },
+    }),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === 'credentials') return true
       if (!user.name) return false
       try {
         await upsertUser({

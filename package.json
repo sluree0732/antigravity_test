@@ -8,6 +8,7 @@
     "start": "next start -p ${PORT:-3000}"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "exceljs": "^4.4.0",
     "google-auth-library": "^10.6.1",
     "googleapis": "^171.4.0",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
