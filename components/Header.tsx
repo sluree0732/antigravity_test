@@ -59,7 +59,7 @@ export default function Header() {
             </>
           ) : (
             <button
-              onClick={() => signIn('google')}
+              onClick={() => signIn('naver')}
               className="text-sm bg-violet-500 text-white px-3 py-1.5 rounded-full hover:bg-violet-600 transition-colors shadow-sm"
             >
               로그인
