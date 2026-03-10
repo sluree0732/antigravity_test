@@ -77,7 +77,7 @@ async function fetchMedia(
     user_id: userId,
     fields: HASHTAG_FIELDS,
     access_token: token,
-    limit: '50',
+    limit: '10',
   }
 
   const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
@@ -146,7 +146,7 @@ async function fetchMedia(
     // Python의 advance_paging과 동일하게 next URL 파싱
     const { path, params: nextParams } = advancePaging(nextUrl)
     url = path
-    params = { ...nextParams, limit: '50' }
+    params = { ...nextParams, limit: '10' }
   }
 
   return { results, usage: lastUsage, logs }
