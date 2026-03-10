@@ -7,13 +7,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; cid: string }> }
 ) {
   const session = await auth()
-  if (!session?.user?.email) {
+  if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { cid } = await params
   try {
-    const deleted = await deleteComment(cid, session.user.email)
+    const deleted = await deleteComment(cid, session.user.email ?? session.user.id ?? '')
     if (!deleted) return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (error) {

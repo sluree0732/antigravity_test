@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (!session?.user?.email || !session?.user?.name) {
+  if (!session?.user?.name) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const post = await createPost({
       title,
       content,
-      authorEmail: session.user.email,
+      authorEmail: session.user.email ?? '',
       authorName: session.user.name,
     })
     return NextResponse.json(post, { status: 201 })

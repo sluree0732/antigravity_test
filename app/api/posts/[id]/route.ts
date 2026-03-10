@@ -22,14 +22,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session?.user?.email) {
+  if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const userKey = session.user.email ?? session.user.id ?? ''
 
   const { id } = await params
   const post = await getPostById(id)
   if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (post.authorEmail !== session.user.email) {
+  if (post.authorEmail !== userKey) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -54,14 +55,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session?.user?.email) {
+  if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const userKey = session.user.email ?? session.user.id ?? ''
 
   const { id } = await params
   const post = await getPostById(id)
   if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (post.authorEmail !== session.user.email) {
+  if (post.authorEmail !== userKey) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

@@ -21,7 +21,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session?.user?.email || !session?.user?.name) {
+  if (!session?.user?.name) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -36,7 +36,7 @@ export async function POST(
     const comment = await createComment({
       postId: id,
       content,
-      authorEmail: session.user.email,
+      authorEmail: session.user.email ?? session.user.id ?? '',
       authorName: session.user.name,
     })
     return NextResponse.json(comment, { status: 201 })
