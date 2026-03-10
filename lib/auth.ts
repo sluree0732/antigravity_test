@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
-import { upsertUser, verifyLocalUser } from './users'
+import { upsertOAuthUser, verifyLocalUser } from './users'
 
 interface NaverProfile {
   resultcode: string
@@ -56,7 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           id: user.userId,
           name: user.name,
-          email: `${user.userId}@local`,
+          email: '',
           image: null,
         }
       },
@@ -65,13 +65,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'credentials') return true
-      if (!user.name) return false
+      if (!user.name || !user.id) return false
       try {
-        await upsertUser({
-          email: user.email ?? '',
-          name: user.name,
-          image: user.image ?? '',
-        })
+        await upsertOAuthUser(user.id, user.name)
       } catch (error) {
         console.error('[auth] Failed to save user to sheets:', error)
       }

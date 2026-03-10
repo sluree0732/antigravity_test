@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { getPostsByAuthor } from '@/lib/posts'
-import { findUserByEmail } from '@/lib/users'
+import { findUserById } from '@/lib/users'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -8,12 +8,12 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const userKey = session.user.email ?? session.user.id ?? ''
+  const userId = session.user.id ?? ''
 
   try {
     const [user, posts] = await Promise.all([
-      findUserByEmail(userKey),
-      getPostsByAuthor(userKey),
+      findUserById(userId),
+      getPostsByAuthor(userId),
     ])
     return NextResponse.json({ user, posts })
   } catch (error) {
