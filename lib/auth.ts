@@ -23,7 +23,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       type: 'oauth',
       clientId: process.env.NAVER_CLIENT_ID!,
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
-      authorization: 'https://nid.naver.com/oauth2.0/authorize',
+      authorization: {
+        url: 'https://nid.naver.com/oauth2.0/authorize',
+        params: { auth_type: 'reauthenticate' },
+      },
       token: 'https://nid.naver.com/oauth2.0/token',
       userinfo: 'https://openapi.naver.com/v1/nid/me',
       profile(profile: NaverProfile) {
