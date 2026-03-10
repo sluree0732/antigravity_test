@@ -38,10 +38,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user }) {
-      if (!user.email || !user.name) return false
+      if (!user.name) return false
       try {
         await upsertUser({
-          email: user.email,
+          email: user.email ?? '',
           name: user.name,
           image: user.image ?? '',
         })
