@@ -26,15 +26,6 @@ function rowToUser(row: string[]): User {
   }
 }
 
-function rowToLocalUser(row: string[]): LocalUser {
-  return {
-    userId: row[4] ?? '',
-    name: row[5] ?? '',
-    passwordHash: row[6] ?? '',
-    createdAt: row[7] ?? '',
-  }
-}
-
 export async function findUserByEmail(email: string): Promise<User | null> {
   const rows = await getSheetValues(RANGE)
   const row = rows.find((r) => r[0] === email)
@@ -58,14 +49,12 @@ export async function upsertUser(user: Omit<User, 'createdAt'>): Promise<User> {
   return updated
 }
 
-// 자체 회원가입/로그인용 (별도 시트 탭 'localusers')
-const LOCAL_RANGE = 'localusers!A:D'
-
+// 자체 회원가입/로그인 (users 시트 E=userId, F=passwordHash 컬럼 활용)
 export async function findLocalUser(userId: string): Promise<LocalUser | null> {
-  const rows = await getSheetValues(LOCAL_RANGE)
-  const row = rows.find((r) => r[0] === userId)
+  const rows = await getSheetValues(RANGE)
+  const row = rows.find((r) => r[4] === userId)
   if (!row) return null
-  return { userId: row[0], name: row[1], passwordHash: row[2], createdAt: row[3] }
+  return { userId: row[4], name: row[1], passwordHash: row[5], createdAt: row[3] }
 }
 
 export async function createLocalUser(
@@ -78,7 +67,8 @@ export async function createLocalUser(
 
   const passwordHash = await bcrypt.hash(password, 10)
   const createdAt = new Date().toISOString()
-  await appendRow(LOCAL_RANGE, [userId, name, passwordHash, createdAt])
+  // A=email(빈값), B=name, C=image(빈값), D=createdAt, E=userId, F=passwordHash
+  await appendRow(RANGE, ['', name, '', createdAt, userId, passwordHash])
   return { userId, name, passwordHash, createdAt }
 }
 
