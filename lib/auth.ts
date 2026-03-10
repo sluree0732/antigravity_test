@@ -3,6 +3,7 @@ import Google from 'next-auth/providers/google'
 import { upsertUser } from './users'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
