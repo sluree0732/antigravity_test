@@ -489,6 +489,7 @@ export default function NaverPage() {
                   axisLine={false}
                 />
                 <Tooltip
+                  labelFormatter={(label) => formatPeriod(label, displayRecord.timeUnit)}
                   contentStyle={{ borderRadius: '12px', border: '1px solid #ede9fe', fontSize: '12px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} />
