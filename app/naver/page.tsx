@@ -45,6 +45,20 @@ function timeUnitLabel(tu: string) {
   return tu === 'date' ? '일간' : tu === 'week' ? '주간' : '월간'
 }
 
+function formatPeriod(period: string, timeUnit: string): string {
+  if (timeUnit === 'month') {
+    return period.slice(0, 7) // 2025-08-01 → 2025-08
+  }
+  if (timeUnit === 'week') {
+    const end = new Date(period)
+    const start = new Date(end)
+    start.setDate(end.getDate() - 6)
+    const fmt = (d: Date) => d.toISOString().split('T')[0]
+    return `${fmt(start)} ~ ${fmt(end)}` // 2025-05-20 ~ 2025-05-26
+  }
+  return period
+}
+
 function generateChartPng(results: TrendResult[]): string {
   const W = 1000
   const H = 420
@@ -491,7 +505,7 @@ export default function NaverPage() {
               <tbody>
                 {displayRecord.results[0].data.map((d, rowIdx) => (
                   <tr key={d.period} className={`border-b border-violet-50 last:border-0 ${rowIdx % 2 === 1 ? 'bg-violet-50/30' : ''}`}>
-                    <td className="py-2 px-4 text-slate-500 text-xs">{d.period}</td>
+                    <td className="py-2 px-4 text-slate-500 text-xs">{formatPeriod(d.period, displayRecord.timeUnit)}</td>
                     {displayRecord.results.map((r) => (
                       <td key={r.title} className="py-2 px-4 text-right text-slate-700 text-xs font-medium">
                         {r.data[rowIdx]?.ratio.toFixed(2) ?? '-'}
