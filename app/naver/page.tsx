@@ -50,11 +50,11 @@ function formatPeriod(period: string, timeUnit: string): string {
     return period.slice(0, 7) // 2025-08-01 → 2025-08
   }
   if (timeUnit === 'week') {
-    const end = new Date(period)
-    const start = new Date(end)
-    start.setDate(end.getDate() - 6)
+    const start = new Date(period)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
     const fmt = (d: Date) => d.toISOString().split('T')[0]
-    return `${fmt(start)} ~ ${fmt(end)}` // 2025-05-20 ~ 2025-05-26
+    return `${fmt(start)} ~ ${fmt(end)}` // 2025-05-26 ~ 2025-06-01
   }
   return period
 }
