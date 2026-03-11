@@ -453,13 +453,34 @@ export default function NaverPage() {
           {/* 그래프 */}
           <div className="w-full">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ede9fe" />
                 <XAxis
                   dataKey="period"
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
                   interval="preserveStartEnd"
                   tickLine={false}
+                  height={displayRecord.timeUnit === 'week' ? 44 : 30}
+                  tick={(props) => {
+                    const { x, y, payload } = props
+                    const period: string = payload.value
+                    if (displayRecord.timeUnit === 'week') {
+                      const end = new Date(period)
+                      end.setDate(end.getDate() + 6)
+                      const endStr = end.toISOString().split('T')[0]
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text x={0} y={0} dy={12} textAnchor="middle" fill="#94a3b8" fontSize={9}>{period}~</text>
+                          <text x={0} y={0} dy={24} textAnchor="middle" fill="#94a3b8" fontSize={9}>{endStr}</text>
+                        </g>
+                      )
+                    }
+                    const label = displayRecord.timeUnit === 'month' ? period.slice(0, 7) : period
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <text x={0} y={0} dy={12} textAnchor="middle" fill="#94a3b8" fontSize={10}>{label}</text>
+                      </g>
+                    )
+                  }}
                 />
                 <YAxis
                   domain={[0, 100]}
