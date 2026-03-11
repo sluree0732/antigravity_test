@@ -3,32 +3,41 @@
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
+
+  function navClass(href: string) {
+    const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
+    return isActive
+      ? 'font-semibold text-violet-700 transition-colors text-sm'
+      : 'text-slate-500 hover:text-violet-600 transition-colors text-sm'
+  }
 
   return (
     <header className="border-b border-violet-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
         <nav className="flex items-center gap-6">
-          <Link href="/" className="font-semibold text-violet-700 hover:text-violet-500 transition-colors">
+          <Link href="/" className={navClass('/')}>
             홈
           </Link>
-          <Link href="/board" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+          <Link href="/board" className={navClass('/board')}>
             게시판
           </Link>
           {session?.user && (
-            <Link href="/mypage" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+            <Link href="/mypage" className={navClass('/mypage')}>
               마이페이지
             </Link>
           )}
-          <Link href="/naver" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+          <Link href="/naver" className={navClass('/naver')}>
             네이버API
           </Link>
-          <Link href="/youtube" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+          <Link href="/youtube" className={navClass('/youtube')}>
             유튜브API
           </Link>
-          <Link href="/instagram" className="text-slate-500 hover:text-violet-600 transition-colors text-sm">
+          <Link href="/instagram" className={navClass('/instagram')}>
             인스타그램API
           </Link>
         </nav>
