@@ -42,6 +42,14 @@ export async function POST(req: NextRequest) {
 
     console.log(`[YT usage POST] units=${units} calls=${calls} date=${today} spreadsheetId=${SPREADSHEET_ID}`)
 
+    // 실제 시트 탭 이름 확인용 디버그
+    const { getSheets } = await import('@/lib/sheets')
+    const sheetsClient = await getSheets()
+    const meta = await sheetsClient.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+    const sheetTitles = meta.data.sheets?.map(s => s.properties?.title) ?? []
+    console.log(`[YT usage POST] 실제 탭 목록: ${JSON.stringify(sheetTitles)}`)
+    console.log(`[YT usage POST] 코드 SHEET_TAB: "${SHEET_TAB}" (length=${SHEET_TAB.length})`)
+
     // 오늘 날짜 행이 이미 있으면 누적, 없으면 새 행 추가
     const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A:C`)
     console.log(`[YT usage POST] rows=${rows.length} rowIndex 탐색 중...`)
