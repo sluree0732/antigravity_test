@@ -40,25 +40,34 @@ export async function POST(req: NextRequest) {
     const { units, calls } = body
     const today = todayKST()
 
+    console.log(`[YT usage POST] units=${units} calls=${calls} date=${today} spreadsheetId=${SPREADSHEET_ID}`)
+
     // 오늘 날짜 행이 이미 있으면 누적, 없으면 새 행 추가
     const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
+    console.log(`[YT usage POST] rows=${rows.length} rowIndex 탐색 중...`)
+
     const rowIndex = rows.findIndex((r, i) => i > 0 && r[0] === today)
+    console.log(`[YT usage POST] rowIndex=${rowIndex}`)
 
     if (rowIndex > 0) {
       const existingUnits = parseInt(rows[rowIndex][1] ?? '0') || 0
       const existingCalls = parseInt(rows[rowIndex][2] ?? '0') || 0
-      const sheetRow = rowIndex + 1 // 배열 인덱스 → 시트 행 번호 (1-based)
+      const sheetRow = rowIndex + 1
+      console.log(`[YT usage POST] UPDATE row ${sheetRow}: ${existingUnits}+${units}, ${existingCalls}+${calls}`)
       await updateRowById(SPREADSHEET_ID, `${SHEET_TAB}!A${sheetRow}:C${sheetRow}`, [
         today, String(existingUnits + units), String(existingCalls + calls),
       ])
     } else {
+      console.log(`[YT usage POST] APPEND 새 행: ${today}, ${units}, ${calls}`)
       await appendUsageRowById(SPREADSHEET_ID, SHEET_TAB, HEADERS, [today, String(units), String(calls)])
     }
 
+    console.log(`[YT usage POST] 완료`)
     const totals = await getTotals()
     return NextResponse.json({ ok: true, ...totals })
   } catch (err) {
     const message = err instanceof Error ? err.message : '서버 오류'
+    console.error(`[YT usage POST ERROR]`, err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
