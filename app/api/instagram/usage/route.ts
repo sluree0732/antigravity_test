@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { appendUsageRowById, getSheetValuesById } from '@/lib/sheets'
 
-const SHEET_TAB = 'API사용량'
-const HEADERS = ['일시', '모드', '쿼리', '수집수', 'call_count(%)', 'total_time(%)']
+// 기존 시트 탭명과 컬럼 구조 (A=날짜, B=call_count, C=total_time)
+const SHEET_TAB = '퀴터_사용량'
+const HEADERS = ['날짜', 'call_count', 'total_time']
+
+function todayKST(): string {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return kst.toISOString().slice(0, 10)
+}
 
 async function getTotals(spreadsheetId: string): Promise<{ totalCount: number; lastCallCount: number; lastTotalTime: number }> {
-  const rows = await getSheetValuesById(spreadsheetId, `${SHEET_TAB}!A1:F`)
+  const rows = await getSheetValuesById(spreadsheetId, `${SHEET_TAB}!A1:C`)
   const dataRows = rows.slice(1)
   let totalCount = 0
   let lastCallCount = 0
   let lastTotalTime = 0
   for (const r of dataRows) {
-    totalCount += parseInt(r[3] ?? '0') || 0
-    lastCallCount = parseInt(r[4] ?? '0') || lastCallCount
-    lastTotalTime = parseInt(r[5] ?? '0') || lastTotalTime
+    totalCount += 1
+    lastCallCount = parseInt(r[1] ?? '0') || lastCallCount
+    lastTotalTime = parseInt(r[2] ?? '0') || lastTotalTime
   }
   return { totalCount, lastCallCount, lastTotalTime }
 }
@@ -39,12 +46,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'IG_SPREADSHEET_ID가 설정되지 않았습니다.' }, { status: 500 })
     }
 
-    const body = await req.json() as { call_count: number; total_time: number; mode: string; query: string; count: number }
-    const { call_count, total_time, mode, query, count } = body
+    const body = await req.json() as { call_count: number; total_time: number }
+    const { call_count, total_time } = body
 
-    const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
     await appendUsageRowById(spreadsheetId, SHEET_TAB, HEADERS, [
-      now, mode, query, String(count), String(call_count), String(total_time),
+      todayKST(), String(call_count), String(total_time),
     ])
 
     const totals = await getTotals(spreadsheetId)

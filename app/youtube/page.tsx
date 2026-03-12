@@ -282,7 +282,7 @@ export default function YouTubePage() {
       fetch('/api/youtube/usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ units: totalUnits, calls: totalCalls, mode, query: cleanQueries.join(', ') }),
+        body: JSON.stringify({ units: totalUnits, calls: totalCalls }),
       })
         .then((r) => r.json())
         .then((d: { totalUnits?: number; totalCalls?: number }) => {

@@ -296,7 +296,7 @@ export default function InstagramPage() {
         fetch('/api/instagram/usage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ call_count: lastUsage.call_count, total_time: lastUsage.total_time, mode: 'hashtag', query: cleanQueries.join(', '), count: total }),
+          body: JSON.stringify({ call_count: lastUsage.call_count, total_time: lastUsage.total_time }),
         })
           .then((r) => r.json())
           .then((d: { totalCount?: number; lastCallCount?: number; lastTotalTime?: number }) => {
@@ -356,7 +356,7 @@ export default function InstagramPage() {
         fetch('/api/instagram/usage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ call_count: lastUsage.call_count, total_time: lastUsage.total_time, mode: 'business', query: cleanQueries.join(', '), count: total }),
+          body: JSON.stringify({ call_count: lastUsage.call_count, total_time: lastUsage.total_time }),
         })
           .then((r) => r.json())
           .then((d: { totalCount?: number; lastCallCount?: number; lastTotalTime?: number }) => {

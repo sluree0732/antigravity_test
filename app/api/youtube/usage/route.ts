@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { appendUsageRow, getSheetValues } from '@/lib/sheets'
 
-const SHEET_TAB = 'API사용량_YouTube'
-const HEADERS = ['일시', '모드', '쿼리', '유닛', '호출수']
+// 기존 시트 탭명과 컬럼 구조 (A=날짜, B=일일사용량, C=호출회수)
+const SHEET_TAB = '퀴터_사용량'
+const HEADERS = ['날짜', '일일사용량', '호출회수']
+
+function todayKST(): string {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return kst.toISOString().slice(0, 10)
+}
 
 async function getTotals(): Promise<{ totalUnits: number; totalCalls: number }> {
-  const rows = await getSheetValues(`${SHEET_TAB}!A1:E`)
+  const rows = await getSheetValues(`${SHEET_TAB}!A1:C`)
   const dataRows = rows.slice(1)
   let totalUnits = 0
   let totalCalls = 0
   for (const r of dataRows) {
-    totalUnits += parseInt(r[3] ?? '0') || 0
-    totalCalls += parseInt(r[4] ?? '0') || 0
+    totalUnits += parseInt(r[1] ?? '0') || 0
+    totalCalls += parseInt(r[2] ?? '0') || 0
   }
   return { totalUnits, totalCalls }
 }
@@ -28,11 +35,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { units: number; calls: number; mode: string; query: string }
-    const { units, calls, mode, query } = body
+    const body = await req.json() as { units: number; calls: number }
+    const { units, calls } = body
 
-    const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
-    await appendUsageRow(SHEET_TAB, HEADERS, [now, mode, query, String(units), String(calls)])
+    await appendUsageRow(SHEET_TAB, HEADERS, [todayKST(), String(units), String(calls)])
 
     const totals = await getTotals()
     return NextResponse.json({ ok: true, ...totals })
