@@ -1,20 +1,41 @@
-import { NextResponse } from 'next/server'
-import { getSheetValues } from '@/lib/sheets'
+import { NextRequest, NextResponse } from 'next/server'
+import { appendUsageRow, getSheetValues } from '@/lib/sheets'
 
-// 유튜브 API 사용량 시트 탭 이름 — search route와 반드시 일치해야 함
 const SHEET_TAB = 'API사용량_YouTube'
-const LAST_N = 5
+const HEADERS = ['일시', '모드', '쿼리', '유닛', '호출수']
+
+async function getTotals(): Promise<{ totalUnits: number; totalCalls: number }> {
+  const rows = await getSheetValues(`${SHEET_TAB}!A1:E`)
+  const dataRows = rows.slice(1)
+  let totalUnits = 0
+  let totalCalls = 0
+  for (const r of dataRows) {
+    totalUnits += parseInt(r[3] ?? '0') || 0
+    totalCalls += parseInt(r[4] ?? '0') || 0
+  }
+  return { totalUnits, totalCalls }
+}
 
 export async function GET() {
   try {
-    const rows = await getSheetValues(`${SHEET_TAB}!A1:Z`)
-    if (!rows.length) return NextResponse.json({ headers: [], rows: [] })
+    const totals = await getTotals()
+    return NextResponse.json(totals)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '서버 오류'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
 
-    const headers = rows[0]
-    const dataRows = rows.slice(1)
-    const lastRows = dataRows.slice(-LAST_N)
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json() as { units: number; calls: number; mode: string; query: string }
+    const { units, calls, mode, query } = body
 
-    return NextResponse.json({ headers, rows: lastRows })
+    const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+    await appendUsageRow(SHEET_TAB, HEADERS, [now, mode, query, String(units), String(calls)])
+
+    const totals = await getTotals()
+    return NextResponse.json({ ok: true, ...totals })
   } catch (err) {
     const message = err instanceof Error ? err.message : '서버 오류'
     return NextResponse.json({ error: message }, { status: 500 })

@@ -162,6 +162,7 @@ export default function YouTubePage() {
   const [selectedRecord, setSelectedRecord] = useState<CollectionRecord | null>(null)
   const [history, setHistory] = useState<CollectionRecord[]>([])
   const [activeTab, setActiveTab] = useState(0)
+  const [sharedUsage, setSharedUsage] = useState<{ totalUnits: number; totalCalls: number } | null>(null)
 
   const logRef = useRef<HTMLDivElement>(null)
 
@@ -170,6 +171,12 @@ export default function YouTubePage() {
       const stored = localStorage.getItem('youtube_collector_history')
       if (stored) setHistory(JSON.parse(stored))
     } catch { /* ignore */ }
+    fetch('/api/youtube/usage')
+      .then((r) => r.json())
+      .then((d: { totalUnits?: number; totalCalls?: number }) => {
+        if (d.totalUnits !== undefined) setSharedUsage({ totalUnits: d.totalUnits, totalCalls: d.totalCalls ?? 0 })
+      })
+      .catch(() => { /* ignore */ })
   }, [])
 
   useEffect(() => {
@@ -269,6 +276,21 @@ export default function YouTubePage() {
     const newHistory = [record, ...history].slice(0, 30)
     setHistory(newHistory)
     localStorage.setItem('youtube_collector_history', JSON.stringify(newHistory))
+
+    // 서버에 사용량 저장 → 공유 누적값 갱신
+    if (totalUnits > 0 || totalCalls > 0) {
+      fetch('/api/youtube/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ units: totalUnits, calls: totalCalls, mode, query: cleanQueries.join(', ') }),
+      })
+        .then((r) => r.json())
+        .then((d: { totalUnits?: number; totalCalls?: number }) => {
+          if (d.totalUnits !== undefined) setSharedUsage({ totalUnits: d.totalUnits, totalCalls: d.totalCalls ?? 0 })
+        })
+        .catch(() => { /* ignore */ })
+    }
+
     setLoading(false)
   }
 
@@ -588,24 +610,24 @@ export default function YouTubePage() {
       {/* 수집 이력 */}
       {history.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-violet-700">
-            수집 이력
-            <span className="text-xs font-normal text-slate-400 ml-2">({history.length}건)</span>
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-violet-700">
+              수집 이력
+              <span className="text-xs font-normal text-slate-400 ml-2">({history.length}건)</span>
+            </h2>
+            {sharedUsage && (
+              <div className="flex items-center gap-3 bg-violet-50 border border-violet-100 rounded-xl px-4 py-2 text-xs">
+                <span className="text-violet-500 font-medium">공유 누적 사용량</span>
+                <span className="text-slate-500">일일사용량</span>
+                <span className="font-semibold text-violet-700">{sharedUsage.totalUnits.toLocaleString()}</span>
+                <span className="text-slate-500">호출회수</span>
+                <span className="font-semibold text-violet-700">{sharedUsage.totalCalls.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
           <ul className="space-y-2">
-            {(() => {
-              // 누적 API 사용량 계산 (오래된 순 → 최신 순으로 누적)
-              const reversed = [...history].reverse()
-              const cumMap: Record<string, { units: number; calls: number }> = {}
-              let cu = 0, cc = 0
-              for (const r of reversed) {
-                cu += r.usage?.units ?? 0
-                cc += r.usage?.calls ?? 0
-                cumMap[r.id] = { units: cu, calls: cc }
-              }
-              return history.map((record) => {
+            {history.map((record) => {
               const total = record.queryResults.reduce((s, r) => s + r.results.length, 0)
-              const cumUsage = cumMap[record.id]
               return (
                 <li
                   key={record.id}
@@ -621,9 +643,9 @@ export default function YouTubePage() {
                     </p>
                   </div>
 
-                  {/* API 사용량 (누적) */}
+                  {/* API 사용량 (이번 수집) */}
                   <div className="flex-1 min-w-0">
-                    {cumUsage ? (
+                    {record.usage ? (
                       <table className="text-xs">
                         <thead>
                           <tr>
@@ -633,8 +655,8 @@ export default function YouTubePage() {
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="py-0.5 px-3 text-slate-600 font-medium">{cumUsage.units.toLocaleString()}</td>
-                            <td className="py-0.5 px-3 text-slate-600 font-medium">{cumUsage.calls}</td>
+                            <td className="py-0.5 px-3 text-slate-600 font-medium">{record.usage.units.toLocaleString()}</td>
+                            <td className="py-0.5 px-3 text-slate-600 font-medium">{record.usage.calls}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -669,8 +691,7 @@ export default function YouTubePage() {
                   </div>
                 </li>
               )
-            })
-            })()}
+            })}
           </ul>
         </section>
       )}
