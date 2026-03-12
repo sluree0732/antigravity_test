@@ -152,6 +152,17 @@ export async function getSheetValuesById(spreadsheetId: string, range: string): 
   return (response.data.values as string[][] | null | undefined) ?? []
 }
 
+export async function updateRowById(spreadsheetId: string, range: string, values: string[]): Promise<void> {
+  const auth = getAuth()
+  const sheets = google.sheets({ version: 'v4', auth })
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range,
+    valueInputOption: 'RAW',
+    requestBody: { values: [values] },
+  })
+}
+
 export async function getSheetId(sheetName: string): Promise<number> {
   const sheets = await getSheets()
   const response = await sheets.spreadsheets.get({
