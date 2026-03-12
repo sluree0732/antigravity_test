@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { appendUsageRowById, getSheetValuesById } from '@/lib/sheets'
 
-// 기존 시트 탭명과 컬럼 구조 (A=날짜, B=call_count, C=total_time)
+// 인스타그램_DB 스프레드시트 (퀴터_사용량 탭 보유)
+const SPREADSHEET_ID = '1z1kqMwv8yLsUJMzIojgJpUyNukDkCo9uI9xdIR-fm18'
 const SHEET_TAB = '퀴터_사용량'
 const HEADERS = ['날짜', 'call_count', 'total_time']
 
@@ -11,8 +12,8 @@ function todayKST(): string {
   return kst.toISOString().slice(0, 10)
 }
 
-async function getTotals(spreadsheetId: string): Promise<{ totalCount: number; lastCallCount: number; lastTotalTime: number }> {
-  const rows = await getSheetValuesById(spreadsheetId, `${SHEET_TAB}!A1:C`)
+async function getTotals(): Promise<{ totalCount: number; lastCallCount: number; lastTotalTime: number }> {
+  const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
   const dataRows = rows.slice(1)
   let totalCount = 0
   let lastCallCount = 0
@@ -27,11 +28,7 @@ async function getTotals(spreadsheetId: string): Promise<{ totalCount: number; l
 
 export async function GET() {
   try {
-    const spreadsheetId = process.env.IG_SPREADSHEET_ID
-    if (!spreadsheetId) {
-      return NextResponse.json({ error: 'IG_SPREADSHEET_ID가 설정되지 않았습니다.' }, { status: 500 })
-    }
-    const totals = await getTotals(spreadsheetId)
+    const totals = await getTotals()
     return NextResponse.json(totals)
   } catch (err) {
     const message = err instanceof Error ? err.message : '서버 오류'
@@ -41,19 +38,14 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const spreadsheetId = process.env.IG_SPREADSHEET_ID
-    if (!spreadsheetId) {
-      return NextResponse.json({ error: 'IG_SPREADSHEET_ID가 설정되지 않았습니다.' }, { status: 500 })
-    }
-
     const body = await req.json() as { call_count: number; total_time: number }
     const { call_count, total_time } = body
 
-    await appendUsageRowById(spreadsheetId, SHEET_TAB, HEADERS, [
+    await appendUsageRowById(SPREADSHEET_ID, SHEET_TAB, HEADERS, [
       todayKST(), String(call_count), String(total_time),
     ])
 
-    const totals = await getTotals(spreadsheetId)
+    const totals = await getTotals()
     return NextResponse.json({ ok: true, ...totals })
   } catch (err) {
     const message = err instanceof Error ? err.message : '서버 오류'
