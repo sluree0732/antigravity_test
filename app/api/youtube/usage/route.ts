@@ -40,37 +40,20 @@ export async function POST(req: NextRequest) {
     const { units, calls } = body
     const today = todayKST()
 
-    console.log(`[YT usage POST] units=${units} calls=${calls} date=${today} spreadsheetId=${SPREADSHEET_ID}`)
-
-    // 실제 시트 탭 이름 확인용 디버그
-    const { getSheets } = await import('@/lib/sheets')
-    const sheetsClient = await getSheets()
-    const meta = await sheetsClient.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
-    const sheetTitles = meta.data.sheets?.map(s => s.properties?.title) ?? []
-    console.log(`[YT usage POST] 실제 탭 목록: ${JSON.stringify(sheetTitles)}`)
-    console.log(`[YT usage POST] 코드 SHEET_TAB: "${SHEET_TAB}" (length=${SHEET_TAB.length})`)
-
     // 오늘 날짜 행이 이미 있으면 누적, 없으면 새 행 추가
     const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A:C`)
-    console.log(`[YT usage POST] rows=${rows.length} rowIndex 탐색 중...`)
-
     const rowIndex = rows.findIndex((r, i) => i > 0 && r[0] === today)
-    console.log(`[YT usage POST] rowIndex=${rowIndex}`)
 
     if (rowIndex > 0) {
       const existingUnits = parseInt(rows[rowIndex][1] ?? '0') || 0
       const existingCalls = parseInt(rows[rowIndex][2] ?? '0') || 0
       const sheetRow = rowIndex + 1
-      console.log(`[YT usage POST] UPDATE row ${sheetRow}: ${existingUnits}+${units}, ${existingCalls}+${calls}`)
       await updateRowById(SPREADSHEET_ID, `${SHEET_TAB}!A${sheetRow}:C${sheetRow}`, [
         today, String(existingUnits + units), String(existingCalls + calls),
       ])
     } else {
-      console.log(`[YT usage POST] APPEND 새 행: ${today}, ${units}, ${calls}`)
       await appendUsageRowById(SPREADSHEET_ID, SHEET_TAB, HEADERS, [today, String(units), String(calls)])
     }
-
-    console.log(`[YT usage POST] 완료`)
     const totals = await getTotals()
     return NextResponse.json({ ok: true, ...totals })
   } catch (err) {
