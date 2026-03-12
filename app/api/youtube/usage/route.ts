@@ -3,7 +3,7 @@ import { appendUsageRowById, getSheetValuesById, updateRowById } from '@/lib/she
 
 // SNS 데이터 스크래핑 스프레드시트 (퀴터_사용량 탭 보유)
 const SPREADSHEET_ID = '155CwKeCfacj2mF3-pNINCAYU9QSmW3QmoZwQjRLCzeQ'
-const SHEET_TAB = '퀴터_사용량'
+const SHEET_TAB = '쿼터사용량'
 const HEADERS = ['날짜', '일일사용량', '호출회수']
 
 function todayKST(): string {
