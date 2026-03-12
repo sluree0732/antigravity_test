@@ -13,7 +13,7 @@ function todayKST(): string {
 }
 
 async function getTotals(): Promise<{ totalUnits: number; totalCalls: number }> {
-  const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
+  const rows = await getSheetValuesById(SPREADSHEET_ID, `'${SHEET_TAB}'!A1:C`)
   const dataRows = rows.slice(1)
   let totalUnits = 0
   let totalCalls = 0
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     console.log(`[YT usage POST] units=${units} calls=${calls} date=${today} spreadsheetId=${SPREADSHEET_ID}`)
 
     // 오늘 날짜 행이 이미 있으면 누적, 없으면 새 행 추가
-    const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
+    const rows = await getSheetValuesById(SPREADSHEET_ID, `'${SHEET_TAB}'!A1:C`)
     console.log(`[YT usage POST] rows=${rows.length} rowIndex 탐색 중...`)
 
     const rowIndex = rows.findIndex((r, i) => i > 0 && r[0] === today)
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       const existingCalls = parseInt(rows[rowIndex][2] ?? '0') || 0
       const sheetRow = rowIndex + 1
       console.log(`[YT usage POST] UPDATE row ${sheetRow}: ${existingUnits}+${units}, ${existingCalls}+${calls}`)
-      await updateRowById(SPREADSHEET_ID, `${SHEET_TAB}!A${sheetRow}:C${sheetRow}`, [
+      await updateRowById(SPREADSHEET_ID, `'${SHEET_TAB}'!A${sheetRow}:C${sheetRow}`, [
         today, String(existingUnits + units), String(existingCalls + calls),
       ])
     } else {

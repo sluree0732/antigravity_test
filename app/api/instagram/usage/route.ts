@@ -13,7 +13,7 @@ function todayKST(): string {
 }
 
 async function getTotals(): Promise<{ totalCount: number; lastCallCount: number; lastTotalTime: number }> {
-  const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
+  const rows = await getSheetValuesById(SPREADSHEET_ID, `'${SHEET_TAB}'!A1:C`)
   const dataRows = rows.slice(1)
   let totalCount = 0
   let lastCallCount = 0
@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
 
     // 오늘 날짜 행이 이미 있으면 최신값으로 덮어쓰기, 없으면 새 행 추가
     // (call_count, total_time은 누적이 아닌 현재 API 사용률이므로 최신값으로 갱신)
-    const rows = await getSheetValuesById(SPREADSHEET_ID, `${SHEET_TAB}!A1:C`)
+    const rows = await getSheetValuesById(SPREADSHEET_ID, `'${SHEET_TAB}'!A1:C`)
     const rowIndex = rows.findIndex((r, i) => i > 0 && r[0] === today)
 
     if (rowIndex > 0) {
       const sheetRow = rowIndex + 1 // 배열 인덱스 → 시트 행 번호 (1-based)
-      await updateRowById(SPREADSHEET_ID, `${SHEET_TAB}!A${sheetRow}:C${sheetRow}`, [
+      await updateRowById(SPREADSHEET_ID, `'${SHEET_TAB}'!A${sheetRow}:C${sheetRow}`, [
         today, String(call_count), String(total_time),
       ])
     } else {
