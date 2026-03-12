@@ -132,14 +132,14 @@ export async function appendUsageRowById(spreadsheetId: string, sheetName: strin
     })
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `'${sheetName}'!A1`,
+      range: `${sheetName}!A1`,
       valueInputOption: 'RAW',
       requestBody: { values: [headers] },
     })
   }
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `'${sheetName}'!A1`,
+    range: `${sheetName}!A1`,
     valueInputOption: 'RAW',
     requestBody: { values: [values] },
   })
